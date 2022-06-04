@@ -1,9 +1,15 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Text, View, StyleSheet, ActivityIndicator, Image} from 'react-native';
-import {ScrollView, TouchableOpacity} from 'react-native-gesture-handler';
+import {
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native-gesture-handler';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import actions from '../redux/actions/index';
+import AsyncStorage from '@react-native-community/async-storage';
+
 import reactotron from 'reactotron-react-native';
 
 const {fetchFilms} = actions;
@@ -13,11 +19,54 @@ export default function Home() {
   const Films = useSelector(state => state.home.movies);
   reactotron.log('Home', Films);
   const isFethingFilms = useSelector(state => state.home.isFethingFilms);
-
+  const [movies, setMovies] = useState([]);
+  const [favourites, setFavourites] = useState([]);
+  const [searchValue, setSearchValue] = useState('star');
   const dispatch = useDispatch();
   useEffect(() => {
     dispatch(fetchFilms());
   }, []);
+  const getMovieRequest = async searchValue => {
+    const url = `http://www.omdbapi.com/?s=${searchValue}&apikey=5a870659`;
+
+    const response = await fetch(url);
+    const responseJson = await response.json();
+
+    if (responseJson.Search) {
+      setMovies(responseJson.Search);
+    }
+  };
+
+  useEffect(() => {
+    getMovieRequest(searchValue);
+  }, [searchValue]);
+  useEffect(() => {
+    const movieFavourites = AsyncStorage.getItem(
+      'react-movie-app-favourites',
+    ).then(res => {
+      setFavourites(JSON.parse(res));
+    });
+
+    if (movieFavourites) {
+      setFavourites(movieFavourites);
+    }
+  }, []);
+  const saveToLocalStorage = items => {
+    AsyncStorage.setItem('react-movie-app-favourites', JSON.stringify(items));
+  };
+  const addFavouriteMovie = movie => {
+    const newFavouriteList = [...favourites, movie];
+    setFavourites(newFavouriteList);
+    saveToLocalStorage(newFavouriteList);
+  };
+
+  const removeFavouriteMovie = movie => {
+    const newFavouriteList = favourites.filter(
+      favourite => favourite.imdbID !== movie.imdbID,
+    );
+    setFavourites(newFavouriteList);
+    saveToLocalStorage(newFavouriteList);
+  };
   if (isFethingFilms) {
     return (
       <View style={{alignSelf: 'center', justifyContent: 'center'}}>
@@ -27,21 +76,55 @@ export default function Home() {
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: '#fff'}}>
+    <ScrollView>
       <TouchableOpacity style={styles.search} onPress={() => null}>
-        <Text style={styles.title}>Search</Text>
+        <TextInput
+          style={styles.title}
+          placeholder={'Search'}
+          value={searchValue}
+          onChangeText={text => setSearchValue(text)}
+        />
       </TouchableOpacity>
-      <View style={{flex: 1, marginTop: 25}}>
+      <View style={{marginTop: 10}}>
         <View>
           <Text style={styles.seeMore}>Movies</Text>
         </View>
-        <ScrollView>
-          {Films?.Search?.map(item => {
+        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+          {movies.map(item => {
+            return (
+              <View style={{alignItems: 'center'}}>
+                <TouchableOpacity
+                  key={item.imdbID}
+                  style={styles.container}
+                  onPress={() => navigation.navigate('Detailes', {item})}>
+                  <Image
+                    source={{uri: item.Poster}}
+                    style={{width: 300, height: 200}}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.title}>{item.Title}</Text>
+                  <Text style={styles.title}>{item.Year}</Text>
+                  <Text style={styles.title}>{item.Type}</Text>
+                </TouchableOpacity>
+                <Text
+                  style={styles.title}
+                  onPress={() => addFavouriteMovie(item)}>
+                  add to favorites
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+        <View>
+          <Text style={styles.seeMore}>favorites </Text>
+        </View>
+        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+          {favourites?.map(item => {
             return (
               <TouchableOpacity
                 key={item.imdbID}
                 style={styles.container}
-                onPress={() => null}>
+                onPress={() => removeFavouriteMovie(item)}>
                 <Image
                   source={{uri: item.Poster}}
                   style={{width: 300, height: 200}}
@@ -55,7 +138,7 @@ export default function Home() {
           })}
         </ScrollView>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -73,17 +156,18 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     margin: 20,
   },
-  title: {color: 'black', fontSize: 14, fontWeight: 'bold'},
+  title: {color: 'black', fontSize: 14, fontWeight: 'bold', margin: 5},
   seeMore: {
     color: 'black',
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+    alignSelf: 'flex-start',
+    margin: 15,
   },
   search: {
     borderWidth: 1,
     alignItems: 'center',
-    height: 40,
     width: '70%',
     marginTop: 20,
     justifyContent: 'center',

@@ -1,5 +1,3 @@
-import reactotron from 'reactotron-react-native';
-
 export const URL = 'http://www.omdbapi.com/?s=star&apikey=5a870659';
 
 const request = async (method, endpoin) => {
