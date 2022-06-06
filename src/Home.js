@@ -15,17 +15,16 @@ import reactotron from 'reactotron-react-native';
 const {fetchFilms} = actions;
 
 export default function Home() {
-  const navigation = useNavigation();
-  const Films = useSelector(state => state.home.movies);
-  reactotron.log('Home', Films);
-  const isFethingFilms = useSelector(state => state.home.isFethingFilms);
   const [movies, setMovies] = useState([]);
   const [favourites, setFavourites] = useState([]);
-  const [searchValue, setSearchValue] = useState('star');
+  const [searchValue, setSearchValue] = useState('Search');
+
+  const navigation = useNavigation();
+
+  const isFethingFilms = useSelector(state => state.home.isFethingFilms);
+
   const dispatch = useDispatch();
-  useEffect(() => {
-    dispatch(fetchFilms());
-  }, []);
+
   const getMovieRequest = async searchValue => {
     const url = `http://www.omdbapi.com/?s=${searchValue}&apikey=5a870659`;
 
@@ -51,11 +50,16 @@ export default function Home() {
       setFavourites(movieFavourites);
     }
   }, []);
+  useEffect(() => {
+    dispatch(fetchFilms());
+  }, []);
   const saveToLocalStorage = items => {
     AsyncStorage.setItem('react-movie-app-favourites', JSON.stringify(items));
   };
   const addFavouriteMovie = movie => {
-    const newFavouriteList = [...favourites, movie];
+    console.log('favourite', favourites);
+    const newFavouriteList =
+      favourites !== null ? [...favourites, movie] : [movie];
     setFavourites(newFavouriteList);
     saveToLocalStorage(newFavouriteList);
   };
@@ -67,6 +71,7 @@ export default function Home() {
     setFavourites(newFavouriteList);
     saveToLocalStorage(newFavouriteList);
   };
+
   if (isFethingFilms) {
     return (
       <View style={{alignSelf: 'center', justifyContent: 'center'}}>
@@ -90,11 +95,10 @@ export default function Home() {
           <Text style={styles.seeMore}>Movies</Text>
         </View>
         <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-          {movies.map(item => {
+          {movies.map((item, id) => {
             return (
-              <View style={{alignItems: 'center'}}>
+              <View style={{alignItems: 'center'}} key={id}>
                 <TouchableOpacity
-                  key={item.imdbID}
                   style={styles.container}
                   onPress={() => navigation.navigate('Detailes', {item})}>
                   <Image
@@ -119,21 +123,27 @@ export default function Home() {
           <Text style={styles.seeMore}>favorites </Text>
         </View>
         <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-          {favourites?.map(item => {
+          {favourites?.map((item, i) => {
             return (
-              <TouchableOpacity
-                key={item.imdbID}
-                style={styles.container}
-                onPress={() => removeFavouriteMovie(item)}>
-                <Image
-                  source={{uri: item.Poster}}
-                  style={{width: 300, height: 200}}
-                  resizeMode="contain"
-                />
-                <Text style={styles.title}>{item.Title}</Text>
-                <Text style={styles.title}>{item.Year}</Text>
-                <Text style={styles.title}>{item.Type}</Text>
-              </TouchableOpacity>
+              <View style={{alignItems: 'center'}} key={i}>
+                <TouchableOpacity
+                  style={styles.container}
+                  onPress={() => navigation.navigate('Detailes', {item})}>
+                  <Image
+                    source={{uri: item.Poster}}
+                    style={{width: 300, height: 200}}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.title}>{item.Title}</Text>
+                  <Text style={styles.title}>{item.Year}</Text>
+                  <Text style={styles.title}>{item.Type}</Text>
+                </TouchableOpacity>
+                <Text
+                  style={styles.title}
+                  onPress={() => removeFavouriteMovie(item)}>
+                  remove from favorites
+                </Text>
+              </View>
             );
           })}
         </ScrollView>
