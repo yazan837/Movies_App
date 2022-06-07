@@ -22,6 +22,9 @@ export default function Home() {
   const navigation = useNavigation();
 
   const isFethingFilms = useSelector(state => state.home.isFethingFilms);
+  const isFethingFilmsError = useSelector(
+    state => state.home.isFethingFilmsError,
+  );
 
   const dispatch = useDispatch();
 
@@ -57,7 +60,6 @@ export default function Home() {
     AsyncStorage.setItem('react-movie-app-favourites', JSON.stringify(items));
   };
   const addFavouriteMovie = movie => {
-    console.log('favourite', favourites);
     const newFavouriteList =
       favourites !== null ? [...favourites, movie] : [movie];
     setFavourites(newFavouriteList);
@@ -79,7 +81,22 @@ export default function Home() {
       </View>
     );
   }
+  if (isFethingFilmsError) {
+    return (
+      <View
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 100,
+        }}>
+        <Text style={{fontSize: 22}}>Please Check Your Internet Connectin</Text>
 
+        <TouchableOpacity onPress={() => dispatch(fetchFilms())}>
+          <Text style={{fontSize: 22, margin: 25}}>Reconnect</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   return (
     <ScrollView>
       <TouchableOpacity style={styles.search} onPress={() => null}>

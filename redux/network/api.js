@@ -1,3 +1,5 @@
+import reactotron from 'reactotron-react-native';
+
 export const URL = 'http://www.omdbapi.com/?s=star&apikey=5a870659';
 
 const request = async (method, endpoin) => {
@@ -11,10 +13,16 @@ const request = async (method, endpoin) => {
   })
     .then(res => res.json())
     .then(res => {
-      return {
-        networkSuccess: 200,
-        data: res,
-      };
+      if (res != null) {
+        return {
+          networkSuccess: true,
+          data: res,
+        };
+      } else {
+        return {
+          networkSuccess: false,
+        };
+      }
     })
     .catch(e => ({networkSuccess: false}));
 };

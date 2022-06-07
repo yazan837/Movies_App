@@ -23,7 +23,7 @@ const isFethingFilms = (state = initState, action) => {
 const isFethingFilmsError = (state = initState, action) => {
   switch (action.type) {
     case COMPLETE_FETCH_FILMS: {
-      return !action.data.networkSuccess;
+      return !action.data.Response;
     }
     default: {
       return state;
